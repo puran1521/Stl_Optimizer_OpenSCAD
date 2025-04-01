@@ -37,10 +37,12 @@ def optimize_stl(input_path, thickness=0.2, max_speed=150, mode="fast", output_d
 
     difference() {{
         model();  // Outer shell
+        // Inner shell (hollowed)
         scale([{(dims[0] - 2*thickness)/dims[0]}, {(dims[1] - 2*thickness)/dims[1]}, {(dims[2] - 2*thickness)/dims[2]}])
-            model();  // Inner shell
-        translate([0, 0, {bounds[0][2] - 0.01}])  // Bottom face
-            cube([{dims[0] + 1}, {dims[1] + 1}, 0.02], center=true);  // Thin bottom cut
+            model();
+        // Bottom cut only
+        translate([0, 0, {bounds[0][2] - 0.001}])  // Just below bottom face
+            cube([{dims[0] + 0.1}, {dims[1] + 0.1}, 0.002], center=true);  // Razor-thin cut
     }}
     """
     scad_path = os.path.join(output_dir, "temp.scad")
@@ -67,7 +69,7 @@ def optimize_stl(input_path, thickness=0.2, max_speed=150, mode="fast", output_d
     print(f"Optimized Volume: {opt_volume:.2f} mm³")
     print(f"Final Height: {dims[2]:.2f} mm")
 
-    # Cura profile with fixed user max speed
+    # Cura profile with 10% infill
     profile_name = f"PrintFast_{mode}_t{thickness}"
     global_ini = f"""[general]
 version = 4
@@ -98,7 +100,8 @@ setting_version = 24
 [values]
 acceleration_print = 3000
 cool_min_layer_time = 0
-infill_sparse_density = 2
+infill_sparse_density = 10
+infill_pattern = gyroid
 jerk_print = 40
 speed_print = {max_speed}
 speed_wall_0 = {max_speed}
